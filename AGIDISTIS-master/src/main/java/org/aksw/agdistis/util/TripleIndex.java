@@ -3,9 +3,7 @@ package org.aksw.agdistis.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -44,7 +42,7 @@ public class TripleIndex {
 	public static final String FIELD_NAME_OBJECT_LITERAL = "object_literal";
 	public static final String FIELD_FREQ = "freq";
 
-	private int defaultMaxNumberOfDocsRetrievedFromIndex = 100;
+	private int defaultMaxNumberOfDocsRetrievedFromIndex = 50;
 
 	private Directory directory;
 	private IndexSearcher isearcher;
@@ -164,17 +162,18 @@ public class TripleIndex {
 	public DirectoryReader getIreader() {
 		return ireader;
 	}
-	public static List<WikiData> SendRequest(String search_entity) throws IOException {
+	public static Map<String, WikiData> sendRequest(String search_entity) throws IOException {
 		ArrayList<String> fileList = new ArrayList<String>();
 		TripleIndex context = new TripleIndex();
 		List<Triple> list = context.search(null, null, search_entity);
+		Map<String, WikiData> wikiDataMap= new HashMap<>();
 		List<WikiData> wikiDataList = new ArrayList<>();
 		for (Triple triple : list) {
 			WikiData wikidata = new WikiData();
 			wikidata.setLabel(triple.getObject());
 			wikidata.setUrl(triple.getSubject());
-			wikiDataList.add(wikidata);
+			wikiDataMap.put(triple.getSubject(), wikidata);
 		}
-		return wikiDataList;
+		return wikiDataMap;
 	}
 }
