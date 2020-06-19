@@ -9,25 +9,29 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GetWikiData {
-    public static String search_entity = "angelina";
-    public List<WikiData> docs= new ArrayList<WikiData>();
-    public  List<WikiData> finalList= new ArrayList<WikiData>();
+    public static String search_entity = "dresden";
+    public Map<String, WikiData> docs= null;
+    public Map<String, WikiData> finalList= new HashMap<>();
 
     public static void main(String[] args) throws IOException, InterruptedException {
         GetWikiData getwikidata = new GetWikiData();
-        for (WikiData data : getwikidata.sendData(search_entity)) {
-            System.out.println(data.getDescription() + data.getUrl());
+        for (Map.Entry<String, WikiData> data : getwikidata.sendData(search_entity).entrySet()) {
+            WikiData wikidata = data.getValue();
+            System.out.println(wikidata.getLabel() + wikidata.getUrl() + wikidata.getUnique_identifier() + wikidata.getDescription());
         }
     }
-    public List<WikiData> sendData(String search_entity) throws IOException {
-        this.docs = TripleIndex.SendRequest(search_entity);
-        for (WikiData data : this.docs) {
-            data.setDescription(getDescription(data.getUrl()));
-            data.setUnique_identifier(data.getUrl().replace("http://www.wikidata.org/entity/",""));
-            this.finalList.add(data);
+    public Map<String, WikiData> sendData(String search_entity) throws IOException {
+        this.docs = TripleIndex.sendRequest(search_entity);
+        for (Map.Entry<String, WikiData> data : this.docs.entrySet()) {
+            WikiData wikiData = data.getValue();
+            wikiData.setDescription(getDescription(wikiData.getUrl()));
+            wikiData.setUnique_identifier(wikiData.getUrl().replace("http://www.wikidata.org/entity/",""));
+            this.finalList.put(wikiData.unique_identifier, wikiData);
         }
         return finalList;
     }
@@ -38,7 +42,6 @@ public class GetWikiData {
         try {
 
             String url = url2+".json";
-
             URL obj = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
             conn.setReadTimeout(5000);
@@ -56,7 +59,6 @@ public class GetWikiData {
             }
             if (redirect) {
 
-                // getting redirect url from "location" header field
                 String newUrl = conn.getHeaderField("Location");
                 String cookies = conn.getHeaderField("Set-Cookie");
                 conn = (HttpURLConnection) new URL(newUrl).openConnection();
@@ -77,7 +79,6 @@ public class GetWikiData {
             JSONObject obj_json = new JSONObject(html.toString());
             if (obj_json.getJSONObject("entities") != null) {
                 JSONObject entities = obj_json.getJSONObject("entities");
-                //String unique_identifier = "Q76";
                 if (entities.getJSONObject(unique_identifier) != null) {
                     JSONObject unique_id = entities.getJSONObject(unique_identifier);
                     if (unique_id.getJSONObject("descriptions") != null) {
